@@ -56,7 +56,7 @@ class mxxbuilder(object):
 
         for f in self.newsources:
             targeto = self.get_target_o_path(f)
-            print("{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
+            print("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
             subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
 
         print("compilation::finish in {}s with {} files\n".format(time.process_time() - start_time, len(self.newsources)))
