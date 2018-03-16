@@ -1,6 +1,7 @@
 
-import sys, os
-from os import path
+import os
+path = os.path
+
 import subprocess
 import time
 import argparse
@@ -8,7 +9,10 @@ import argparse
 import cppcollector
 
 class mxxbuilder(object):
-    def __init__(self, targetdir):
+    def __init__(self, targetdir, exclude):
+        exclude = map(lambda f: path.normpath(f), exclude)
+        self.exclude = list(exclude)
+
         targetdir = path.abspath(path.normpath(targetdir))
         self.sourcedir = targetdir
         if not path.exists(self.sourcedir): raise Exception("targetdir \"{}\" does not exist!".format(self.sourcedir))
@@ -16,9 +20,6 @@ class mxxbuilder(object):
         self.rootdir = path.normpath(path.join(self.sourcedir, '..')) # one up
         self.builddir = path.join(self.rootdir, 'build')
         if not path.exists(self.builddir): os.makedirs(self.builddir)
-        
-        self.sources = cppcollector.get_files(self.sourcedir, cppcollector.cpp_exts)
-        self.newsources = list(filter(self.is_file_new, self.sources))
 
     def get_reltoroot_path(self, src_file):
         return path.relpath(src_file, self.rootdir)
@@ -51,23 +52,25 @@ class mxxbuilder(object):
         
         return False
     def compile_new(self, options):
-        if options is None: options = []
+        sources = cppcollector.get_files(self.sourcedir, cppcollector.cpp_exts)
+        sources = filter(lambda f: not path.relpath(f, self.sourcedir) in self.exclude, sources) # filter excluded
+        newsources = list(filter(self.is_file_new, sources))
 
         print("compilation::start{}".format('' if len(options) < 1 else ' with options={}'.format(options)))
         start_time = time.process_time()
 
-        for f in self.newsources:
+        for f in newsources:
             targeto = self.get_target_o_path(f)
             print("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
             subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
 
-        print("compilation::finish in {}s with {} files\n".format(time.process_time() - start_time, len(self.newsources)))
+        print("compilation::finish in {}s with {} files\n".format(time.process_time() - start_time, len(newsources)))
     def linkall(self, options = None):
-        if options is None: options = []
-
         outputs = cppcollector.get_files(self.builddir, cppcollector.o_exts)
+        outputs = filter(lambda f: not path.relpath(f, self.builddir) in self.exclude, outputs) # filter excluded
+        outputs = list(outputs)
         output_exe_path = self.get_output_exe_path()
-        
+
         command = ['g++'] + options + ['-o', output_exe_path] + outputs
         print("linking::start with \"{}\"".format(' '.join(map(lambda f: self.get_reltoroot_path(f) if path.isabs(f) else f, command))))
         start_time = time.process_time()
@@ -82,8 +85,11 @@ def parse_args():
     parser = argparse.ArgumentParser(prefix_chars='+')
     parser.add_argument('targetdir')
     parser.add_argument('++copts', help='compiler options', nargs='+')
+    parser.set_defaults(copts=[])
     parser.add_argument('++lopts', help='linker options', nargs='+')
-
+    parser.set_defaults(lopts=[])
+    parser.add_argument('++exclude', help='ignore these file names relative to root of search dir (/src or /build)', nargs='+')
+    parser.set_defaults(exclude=[])
 
     parser.add_argument('++compile', dest='compile', action='store_true')
     parser.add_argument('++no-compile', dest='compile', action='store_false')
@@ -91,6 +97,9 @@ def parse_args():
     parser.add_argument('++link', dest='link', action='store_true')
     parser.add_argument('++no-link', dest='link', action='store_false')
     parser.set_defaults(link=True)
+
+    parser.add_argument('++clean', dest='clean', action='store_true')
+    parser.set_defaults(clean=False)
 
     parser.add_argument('++autorun', dest='autorun', action='store_true')
     parser.set_defaults(autorun=False)
@@ -100,7 +109,12 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
 
-    mxx = mxxbuilder(args.targetdir)
+    mxx = mxxbuilder(args.targetdir, args.exclude)
+
+    if args.clean:
+        import shutil
+        try: shutil.rmtree(mxx.builddir)
+        except: pass
 
     if args.compile:
         mxx.compile_new(args.copts)
