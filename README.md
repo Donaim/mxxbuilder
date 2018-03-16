@@ -3,9 +3,10 @@ My simple builder for c++
 # Usage
     mxxbuild.py [++copts COPTS [COPTS ...]]
                 [++lopts LOPTS [LOPTS ...]]
+                [++exclude EXCLUDE [EXCLUDE ...]]
                 [++compile] [++no-compile]
                 [++link] [++no-link] 
-                [++autorun]
+                [++autorun] [++clean]
                 targetdir
 
 Where `++copts` is compiler-options, and respectively `++lopts` is linker options.  
@@ -25,6 +26,6 @@ Where, obviously, /build is the output directory which cxxbuilder is going to be
 # To do
 - [X] Timings and other statistics
 - [X] Option parsing
-- [ ] Auto-run option
+- [X] Auto-run option
 - [X] Send-forward options for linker and compiler
 
