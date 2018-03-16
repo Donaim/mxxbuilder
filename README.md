@@ -1,7 +1,7 @@
 My simple builder for c++
 
 # Usage
-    cxxbuild.py [--copts COPTS [COPTS ...]]
+    mxxbuild.py [--copts COPTS [COPTS ...]]
                 [--lopts LOPTS [LOPTS ...]]
                 targetdir
 

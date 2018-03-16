@@ -7,7 +7,7 @@ import argparse
 
 import cppcollector
 
-class cxxbuilder(object):
+class mxxbuilder(object):
     def __init__(self, targetdir):
         targetdir = path.abspath(path.normpath(targetdir))
         self.sourcedir = targetdir
@@ -77,8 +77,8 @@ if __name__ == '__main__':
     parser.add_argument('--lopts', help='linker options', nargs='+')
     args = parser.parse_args()
 
-    cxx = cxxbuilder(args.targetdir)
-    cxx.compile_new(args.copts)
-    cxx.linkall(args.lopts)
+    mxx = mxxbuilder(args.targetdir)
+    mxx.compile_new(args.copts)
+    mxx.linkall(args.lopts)
 
-    print("cxxbuild::end")
+    print("mxxbuild::end")
