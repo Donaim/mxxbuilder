@@ -83,13 +83,8 @@ class mxxbuilder(object):
 
 def parse_args():
     parser = argparse.ArgumentParser(prefix_chars='+')
+
     parser.add_argument('targetdir')
-    parser.add_argument('++copts', help='compiler options', nargs='+')
-    parser.set_defaults(copts=[])
-    parser.add_argument('++lopts', help='linker options', nargs='+')
-    parser.set_defaults(lopts=[])
-    parser.add_argument('++exclude', help='ignore these file names relative to root of search dir (/src or /build)', nargs='+')
-    parser.set_defaults(exclude=[])
 
     parser.add_argument('++compile', dest='compile', action='store_true')
     parser.add_argument('++no-compile', dest='compile', action='store_false')
@@ -103,6 +98,13 @@ def parse_args():
 
     parser.add_argument('++autorun', dest='autorun', action='store_true')
     parser.set_defaults(autorun=False)
+ 
+    parser.add_argument('++copts', help='compiler options', nargs='+')
+    parser.set_defaults(copts=[])
+    parser.add_argument('++lopts', help='linker options', nargs='+')
+    parser.set_defaults(lopts=[])
+    parser.add_argument('++exclude', help='ignore these file names relative to root of search dir (/src or /build)', nargs='+')
+    parser.set_defaults(exclude=[])
 
     return parser.parse_args()
 
