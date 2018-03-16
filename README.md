@@ -1,27 +1,30 @@
 My simple builder for c++
 
 # Usage
-    mxxbuild.py [++copts COPTS [COPTS ...]]
-                [++lopts LOPTS [LOPTS ...]]
-                [++exclude EXCLUDE [EXCLUDE ...]]
-                [++compile] [++no-compile]
-                [++link] [++no-link] 
-                [++autorun] [++clean]
-                targetdir
+    mxxbuild.py targetdir [++out [OUT]] 
+                [++compile] [++no-compile] [++link] [++no-link] 
+                [++clean] [++autorun] 
+                [++copts COPTS [COPTS ...]] [++lopts LOPTS [LOPTS ...]]
+                [++exclude EXCLUDE [EXCLUDE ...]] 
 
-Where `++copts` is compiler-options, and respectively `++lopts` is linker options.  
-`targetdir` is source files directory.  
-You need to use `++` to provide optional arguments for compiler or linker it's because argparse recognizes `-` as its own option.
+Where  
+`targetdir` is source files directory. Usually `/src`.  
+`++copts`, `++lopts` are compiler- and respectively linker- options.  
+`++exclude` will ignore chosen files during linking/compilation. Useful for tests or solution with multiple `main` entries.  
+`++out` specifies `-o` (output file) option.  
+`++clean` does usual clean up in `/build` directory.  
+`++autorun` runs `OUT` after linking, or just runs if it exists.  
+`++compile`, `++no-compile`, `++link` and `++no-link` are self-descriptive. Default values are true.  
 
-For now, target project has to have following structure:  
+You need to use `++` instead of `--` because argparse treats `-` as its own option, therefore it's problematic to pass options to g++.
 
-    | project root
-    |---|- build/
-        |- src/
-        |- ...
-
-Where, obviously, /build is the output directory which cxxbuilder is going to be using for .exe file and .o files. And /src is `targetdir` which contains all source .cpp files that are used during compilation.   
-
+# Internal procedure
+- recieve `/targetdir` path
+- find `/build` directory at `targetdir/../build`. create if doesn't exist
+- init output files from `/build`, and source files from `/targetdir`
+- compare modification time of source files and output files with same name
+- if output file is older, recompile it
+- link everything in `/build`
 
 # To do
 - [X] Timings and other statistics
