@@ -60,14 +60,14 @@ class mxxbuilder(object):
         newsources = list(filter(self.is_file_new, sources))
 
         print("compilation::start{}".format('' if len(options) < 1 else ' with options={}'.format(options)))
-        start_time = time.process_time()
+        start_time = time.time()
 
         for f in newsources:
             targeto = self.get_target_o_path(f)
             print("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
             subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
 
-        print("compilation::finish in {}s with {} files\n".format(time.process_time() - start_time, len(newsources)))
+        print("compilation::finish in {:.2f}s with {} files\n".format(time.time() - start_time, len(newsources)))
     def linkall(self, options = None):
         outputs = cppcollector.get_files(self.builddir, cppcollector.o_exts)
         outputs = filter(lambda f: not path.relpath(f, self.builddir) in self.exclude, outputs) # filter excluded
@@ -76,11 +76,11 @@ class mxxbuilder(object):
 
         command = ['g++'] + options + ['-o', output_exe_path] + outputs
         print("linking::start with \"{}\"".format(' '.join(map(lambda f: self.get_reltoroot_path(f) if path.isabs(f) else f, command))))
-        start_time = time.process_time()
+        start_time = time.time()
         
         subprocess.check_call(command)
 
-        print("linking::end in {}s with output in {}\n".format(time.process_time() - start_time, output_exe_path))
+        print("linking::end in {:.2f}s with output in {}\n".format(time.time() - start_time, output_exe_path))
     def runexe(self):
         subprocess.call(self.get_output_exe_path())
 
