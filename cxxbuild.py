@@ -2,6 +2,7 @@
 import sys, os
 from os import path
 import subprocess
+import time
 
 import cppcollector
 
@@ -46,22 +47,25 @@ class cxxbuilder(object):
         return False
     def compile_new(self):
         print("compilation-start")
+        start_time = time.process_time()
+
         for f in self.newsources:
             targeto = self.get_target_o_path(f)
             print("{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
             subprocess.check_call(['g++', '-c', f, '-o', targeto])
 
-        print("compilation-finish")
+        print("compilation-finish in {}s with {} files".format(time.process_time() - start_time, len(self.newsources)))
     def linkall(self):
         outputs = cppcollector.get_files(self.builddir, cppcollector.o_exts)
         output_exe_path = path.join(self.builddir, "a.exe")
         
         command = ['g++'] + outputs + ['-o', output_exe_path]
         print("linking-start with {}".format(command))
+        start_time = time.process_time()
         
         subprocess.check_call(command)
 
-        print("linking-end -> {}".format(output_exe_path))
+        print("linking-end in {}s with output in {}".format(time.process_time() - start_time, output_exe_path))
 
 if __name__ == '__main__':
     targetdir = sys.argv[1]
