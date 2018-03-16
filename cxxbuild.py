@@ -46,7 +46,7 @@ class cxxbuilder(object):
         
         return False
     def compile_new(self):
-        print("compilation-start")
+        print("compilation::start")
         start_time = time.process_time()
 
         for f in self.newsources:
@@ -54,18 +54,18 @@ class cxxbuilder(object):
             print("{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
             subprocess.check_call(['g++', '-c', f, '-o', targeto])
 
-        print("compilation-finish in {}s with {} files".format(time.process_time() - start_time, len(self.newsources)))
+        print("compilation::finish in {}s with {} files\n".format(time.process_time() - start_time, len(self.newsources)))
     def linkall(self):
         outputs = cppcollector.get_files(self.builddir, cppcollector.o_exts)
         output_exe_path = path.join(self.builddir, "a.exe")
         
-        command = ['g++'] + outputs + ['-o', output_exe_path]
-        print("linking-start with {}".format(command))
+        command = ['g++'] + ['-o', output_exe_path] + outputs
+        print("linking::start with \"{}\"".format(' '.join(map(lambda f: self.get_reltoroot_path(f) if path.isabs(f) else f, command))))
         start_time = time.process_time()
         
         subprocess.check_call(command)
 
-        print("linking-end in {}s with output in {}".format(time.process_time() - start_time, output_exe_path))
+        print("linking::end in {}s with output in {}\n".format(time.process_time() - start_time, output_exe_path))
 
 if __name__ == '__main__':
     targetdir = sys.argv[1]
@@ -73,4 +73,4 @@ if __name__ == '__main__':
     cxx.compile_new()
     cxx.linkall()
 
-    print("END")
+    print("cxxbuild::end")
