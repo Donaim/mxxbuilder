@@ -48,7 +48,9 @@ class mxxbuilder(object):
         if path.getmtime(src_file) > path.getmtime(targeto): return True
         
         return False
-    def compile_new(self, options = []):
+    def compile_new(self, options):
+        if options is None: options = []
+
         print("compilation::start{}".format('' if len(options) < 1 else ' with options={}'.format(options)))
         start_time = time.process_time()
 
@@ -58,7 +60,9 @@ class mxxbuilder(object):
             subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
 
         print("compilation::finish in {}s with {} files\n".format(time.process_time() - start_time, len(self.newsources)))
-    def linkall(self, options = []):
+    def linkall(self, options = None):
+        if options is None: options = []
+
         outputs = cppcollector.get_files(self.builddir, cppcollector.o_exts)
         output_exe_path = path.join(self.builddir, "a.exe")
         
@@ -70,15 +74,21 @@ class mxxbuilder(object):
 
         print("linking::end in {}s with output in {}\n".format(time.process_time() - start_time, output_exe_path))
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('targetdir')
-    parser.add_argument('--copts', help='compiler options', nargs='+')
-    parser.add_argument('--lopts', help='linker options', nargs='+')
-    args = parser.parse_args()
 
-    mxx = mxxbuilder(args.targetdir)
-    mxx.compile_new(args.copts)
-    mxx.linkall(args.lopts)
+def parse_args():
+    parser = argparse.ArgumentParser(prefix_chars='+')
+    parser.add_argument('targetdir')
+    parser.add_argument('++copts', help='compiler options', nargs='+')
+    parser.add_argument('++lopts', help='linker options', nargs='+')
+
+    args = parser.parse_args()
+    return (args.targetdir, args.copts, args.lopts)
+
+if __name__ == '__main__':
+    targetdir, copts, lopts = parse_args()
+
+    mxx = mxxbuilder(targetdir)
+    mxx.compile_new(copts)
+    mxx.linkall(lopts)
 
     print("mxxbuild::end")
