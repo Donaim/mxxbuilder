@@ -9,12 +9,12 @@ import argparse
 import cppcollector
 
 class mxxbuilder(object):
-    def __init__(self, targetdir, exclude):
-        exclude = map(lambda f: path.normpath(f), exclude)
-        self.exclude = list(exclude)
+    def __init__(self, args):
+        self.out = args.out
 
-        targetdir = path.abspath(path.normpath(targetdir))
-        self.sourcedir = targetdir
+        self.exclude = list( map(lambda f: path.normpath(f), args.exclude) )
+
+        self.sourcedir = path.abspath(path.normpath(args.targetdir))
         if not path.exists(self.sourcedir): raise Exception("targetdir \"{}\" does not exist!".format(self.sourcedir))
   
         self.rootdir = path.normpath(path.join(self.sourcedir, '..')) # one up
@@ -36,7 +36,10 @@ class mxxbuilder(object):
         
         return targetpath
     def get_output_exe_path(self):
-        return path.join(self.builddir, "a.exe")
+        if self.out is None: 
+            return path.join(self.builddir, "a.exe")
+        else:
+            return self.out
     def is_file_new(self, src_file):
         '''
         if .cpp file needs to be recompiled -> True \n
@@ -85,6 +88,7 @@ def parse_args():
     parser = argparse.ArgumentParser(prefix_chars='+')
 
     parser.add_argument('targetdir')
+    parser.add_argument('++out', help='output file', nargs='?', const=None)
 
     parser.add_argument('++compile', dest='compile', action='store_true')
     parser.add_argument('++no-compile', dest='compile', action='store_false')
@@ -98,6 +102,7 @@ def parse_args():
 
     parser.add_argument('++autorun', dest='autorun', action='store_true')
     parser.set_defaults(autorun=False)
+
  
     parser.add_argument('++copts', help='compiler options', nargs='+')
     parser.set_defaults(copts=[])
@@ -111,7 +116,7 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
 
-    mxx = mxxbuilder(args.targetdir, args.exclude)
+    mxx = mxxbuilder(args)
 
     if args.clean:
         import shutil
@@ -124,7 +129,8 @@ if __name__ == '__main__':
     if args.link:
         mxx.linkall(args.lopts)
 
-    print("mxxbuild::end")
-
     if args.autorun:
+        print('\nRunning {}\n'.format())
         mxx.runexe()
+    else:
+        print("mxxbuild::end")
