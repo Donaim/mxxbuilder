@@ -3,7 +3,7 @@
 
 
 void Cat::voice() {
-    cout << "Meow!!!! IM MAD!!" << endl;
+    cout << "Meow :)" << endl;
 }
 
 
