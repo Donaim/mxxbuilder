@@ -11,8 +11,8 @@ Where `--copts` is compiler-options, and respectively `--lopts` is linker option
 For now, target project has to have following structure:  
 
     | project root
-    |---|- build
-        |- src
+    |---|- build/
+        |- src/
         |- ...
 
 Where, obviously, /build is the output directory which cxxbuilder is going to be using for .exe file and .o files. And /src is `targetdir` which contains all source .cpp files that are used during compilation.   
