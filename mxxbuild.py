@@ -69,8 +69,13 @@ class mxxbuilder(object):
 
         print("compilation::finish in {:.2f}s with {} files".format(time.time() - start_time, len(newsources)))
     def linkall(self, options = None):
+        def linker_sort(val):
+            if path.basename(val).startswith("main"): return 0
+            else: return 1
+
         outputs = cppcollector.get_files(self.builddir, cppcollector.o_exts)
         outputs = filter(lambda f: not path.relpath(f, self.builddir) in self.exclude, outputs) # filter excluded
+        outputs = sorted(outputs, key=linker_sort)
         outputs = list(outputs)
         output_exe_path = self.get_output_exe_path()
 
