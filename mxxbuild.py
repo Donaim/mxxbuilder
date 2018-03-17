@@ -130,7 +130,7 @@ if __name__ == '__main__':
         mxx.linkall(args.lopts)
 
     if args.autorun:
-        print('Running {}\n'.format())
+        print('Running {}\n'.format(mxx.get_output_exe_path()))
         mxx.runexe()
     else:
         print("mxxbuild::end\n")
