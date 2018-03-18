@@ -14,9 +14,12 @@ class mxxbuilder(object):
 
         self.exclude = list( map(lambda f: path.normpath(f), args.exclude) )
 
-        self.targetpath = path.abspath(path.normpath(args.targetdir))
+        self.targetpath = path.abspath(path.normpath(args.targetpath))
         if not path.exists(self.targetpath): raise Exception("targetpath \"{}\" does not exist!".format(self.targetpath))
-        self.targetdir = path.dirname(self.targetpath)
+        if path.isdir(self.targetpath):
+            self.targetdir = self.targetpath
+        else:
+            self.targetdir = path.dirname(self.targetpath)
 
         self.rootdir = path.normpath(path.join(self.targetdir, '..')) # one up
         self.builddir = path.join(self.rootdir, 'build')
@@ -25,17 +28,20 @@ class mxxbuilder(object):
     def get_reltoroot_path(self, src_file):
         return path.relpath(src_file, self.rootdir)
     def get_target_o_path(self, src_file):
-        relpath     = path.relpath(src_file, self.targetdir)
-        targetpath  = path.join(self.builddir, relpath)
-      
-        curr_ext    = targetpath.split(path.extsep)[-1]
-        new_ext     = 'o'
-        targetpath  = (targetpath[:-len(curr_ext)]) + new_ext
+        curr_ext    = src_file.split(path.extsep)[-1]
+        if curr_ext == 'h':
+            return src_file + '.gch'
+        else:
+            relpath     = path.relpath(src_file, self.targetdir)
+            targetpath  = path.join(self.builddir, relpath)
         
-        targetdir = path.dirname(targetpath)
-        if not path.exists(targetdir): os.makedirs(targetdir)
-        
-        return targetpath
+            new_ext     = 'o'
+            targetpath  = (targetpath[:-len(curr_ext)]) + new_ext
+            
+            targetdir = path.dirname(targetpath)
+            if not path.exists(targetdir): os.makedirs(targetdir)
+            
+            return targetpath
     def get_output_exe_path(self):
         if self.out is None: 
             return path.join(self.builddir, "a.exe")
@@ -62,7 +68,20 @@ class mxxbuilder(object):
             return list(filter(self.is_file_new, sources))
         else:
             return [self.targetpath]
+    def compile_stdafx(self, options):
+        src_file = path.join(self.targetdir, 'stdafx.h')
+        if not path.exists(src_file): return
+        if not self.is_file_new(src_file): return
+
+        print("compilation::stdafx")
+        start_time = time.time()
+        targeto = self.get_target_o_path(src_file)
+        subprocess.check_call(['g++'] + options + ['-c', src_file, '-o', targeto])
+        print("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
+
     def compile(self, options):
+        self.compile_stdafx(options)
+
         newsources = self.get_target_files()
 
         print("compilation::start{}".format('' if len(options) < 1 else ' with options={}'.format(options)))
@@ -98,7 +117,7 @@ class mxxbuilder(object):
 def parse_args():
     parser = argparse.ArgumentParser(prefix_chars='+')
 
-    parser.add_argument('targetdir')
+    parser.add_argument('targetpath')
     parser.add_argument('++out', help='output file', nargs='?', const=None)
 
     parser.add_argument('++compile', dest='compile', action='store_true')

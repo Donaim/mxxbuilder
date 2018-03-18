@@ -27,6 +27,7 @@ You need to use `++` instead of `--` because argparse treats `-` as its own opti
 - link everything in `/build`
 
 Note that mxxbuild does not track for changes in .h files. You have to recompile it youself whether such change has happend.  
+Exception is "stdafx.h" which is being checked for updates.  
 
 # To do
 - [X] Timings and other statistics
