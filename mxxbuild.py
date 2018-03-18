@@ -10,6 +10,7 @@ import cppcollector
 
 class mxxbuilder(object):
     def __init__(self, args):
+        self.args = args
         self.out = args.out
 
         self.exclude = list( map(lambda f: path.normpath(f), args.exclude) )
@@ -24,6 +25,7 @@ class mxxbuilder(object):
         self.rootdir = path.normpath(path.join(self.targetdir, '..')) # one up
         self.builddir = path.join(self.rootdir, 'build')
         if not path.exists(self.builddir): os.makedirs(self.builddir)
+        print('builddir=', self.builddir)
 
     def get_reltoroot_path(self, src_file):
         return path.relpath(src_file, self.rootdir)
@@ -80,7 +82,8 @@ class mxxbuilder(object):
         print("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
 
     def compile(self, options):
-        self.compile_stdafx(options)
+        if self.args.stdafx:
+            self.compile_stdafx(options)
 
         newsources = self.get_target_files()
 
@@ -126,6 +129,9 @@ def parse_args():
     parser.add_argument('++link', dest='link', action='store_true')
     parser.add_argument('++no-link', dest='link', action='store_false')
     parser.set_defaults(link=True)
+    parser.add_argument('++stdafx', dest='stdafx', action='store_true')
+    parser.add_argument('++no-stdafx', dest='stdafx', action='store_false')
+    parser.set_defaults(stdafx=True)
 
     parser.add_argument('++clean', dest='clean', action='store_true')
     parser.set_defaults(clean=False)
@@ -146,12 +152,12 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
 
-    mxx = mxxbuilder(args)
-
     if args.clean:
         import shutil
         try: shutil.rmtree(mxx.builddir)
         except: pass
+
+    mxx = mxxbuilder(args)
 
     if args.compile:
         mxx.compile(args.copts)

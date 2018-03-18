@@ -3,7 +3,8 @@ My simple builder for c++
 # Usage
     mxxbuild.py targetpath [++out [OUT]] 
                 [++compile] [++no-compile] [++link] [++no-link] 
-                [++clean] [++autorun] 
+                [++stdafx] [++no-stdafx]  
+                [++clean] [++autorun]  
                 [++copts COPTS [COPTS ...]] [++lopts LOPTS [LOPTS ...]]
                 [++exclude EXCLUDE [EXCLUDE ...]] 
 
@@ -16,7 +17,7 @@ Where
 `++autorun` runs `OUT` after linking, or just runs if it exists.  
 `++compile`, `++no-compile`, `++link` and `++no-link` are self-descriptive. Default values are true.  
 
-You need to use `++` instead of `--` because argparse treats `-` as its own option, therefore it's problematic to pass options to g++.
+You need to use `++` instead of `--` because argparse treats `-` as its own option, therefore it's problematic to pass `copts`, `lopts` to g++.
 
 # Internal procedure
 - recieve `/targetpath` path
