@@ -14,17 +14,18 @@ class mxxbuilder(object):
 
         self.exclude = list( map(lambda f: path.normpath(f), args.exclude) )
 
-        self.sourcedir = path.abspath(path.normpath(args.targetdir))
-        if not path.exists(self.sourcedir): raise Exception("targetdir \"{}\" does not exist!".format(self.sourcedir))
-  
-        self.rootdir = path.normpath(path.join(self.sourcedir, '..')) # one up
+        self.targetpath = path.abspath(path.normpath(args.targetdir))
+        if not path.exists(self.targetpath): raise Exception("targetpath \"{}\" does not exist!".format(self.targetpath))
+        self.targetdir = path.dirname(self.targetpath)
+
+        self.rootdir = path.normpath(path.join(self.targetdir, '..')) # one up
         self.builddir = path.join(self.rootdir, 'build')
         if not path.exists(self.builddir): os.makedirs(self.builddir)
 
     def get_reltoroot_path(self, src_file):
         return path.relpath(src_file, self.rootdir)
     def get_target_o_path(self, src_file):
-        relpath     = path.relpath(src_file, self.sourcedir)
+        relpath     = path.relpath(src_file, self.targetdir)
         targetpath  = path.join(self.builddir, relpath)
       
         curr_ext    = targetpath.split(path.extsep)[-1]
@@ -54,10 +55,15 @@ class mxxbuilder(object):
         if path.getmtime(src_file) > path.getmtime(targeto): return True
         
         return False
-    def compile_new(self, options):
-        sources = cppcollector.get_files(self.sourcedir, cppcollector.cpp_exts)
-        sources = filter(lambda f: not path.relpath(f, self.sourcedir) in self.exclude, sources) # filter excluded
-        newsources = list(filter(self.is_file_new, sources))
+    def get_target_files(self):
+        if path.isdir(self.targetpath):
+            sources = cppcollector.get_files(self.targetpath, cppcollector.cpp_exts)
+            sources = filter(lambda f: not path.relpath(f, self.targetpath) in self.exclude, sources) # filter excluded
+            return list(filter(self.is_file_new, sources))
+        else:
+            return [self.targetpath]
+    def compile(self, options):
+        newsources = self.get_target_files()
 
         print("compilation::start{}".format('' if len(options) < 1 else ' with options={}'.format(options)))
         start_time = time.time()
@@ -129,7 +135,7 @@ if __name__ == '__main__':
         except: pass
 
     if args.compile:
-        mxx.compile_new(args.copts)
+        mxx.compile(args.copts)
     
     if args.link:
         mxx.linkall(args.lopts)
