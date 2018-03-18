@@ -24,9 +24,9 @@ class mxxbuilder(object):
 
         self.rootdir = path.normpath(path.join(self.targetdir, '..')) # one up
         self.builddir = path.join(self.rootdir, 'build')
-        if not path.exists(self.builddir): os.makedirs(self.builddir)
-        print('builddir=', self.builddir)
 
+    def init_build_dir(self):
+        if not path.exists(self.builddir): os.makedirs(self.builddir)
     def get_reltoroot_path(self, src_file):
         return path.relpath(src_file, self.rootdir)
     def get_target_o_path(self, src_file):
@@ -82,6 +82,8 @@ class mxxbuilder(object):
         print("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
 
     def compile(self, options):
+        self.init_build_dir()
+
         if self.args.stdafx:
             self.compile_stdafx(options)
 
@@ -97,10 +99,12 @@ class mxxbuilder(object):
 
         print("compilation::finish in {:.2f}s with {} files".format(time.time() - start_time, len(newsources)))
     def linkall(self, options = None):
+        self.init_build_dir()
+
         def linker_sort(val):
             if path.basename(val).startswith("main"): return 0
             else: return 1
-
+        
         outputs = cppcollector.get_files(self.builddir, cppcollector.o_exts)
         outputs = filter(lambda f: not path.relpath(f, self.builddir) in self.exclude, outputs) # filter excluded
         outputs = sorted(outputs, key=linker_sort)
@@ -151,13 +155,12 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
+    mxx = mxxbuilder(args)
 
     if args.clean:
         import shutil
         try: shutil.rmtree(mxx.builddir)
         except: pass
-
-    mxx = mxxbuilder(args)
 
     if args.compile:
         mxx.compile(args.copts)
