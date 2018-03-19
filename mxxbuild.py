@@ -8,6 +8,14 @@ import argparse
 
 import cppcollector
 
+class Log(object):
+    def __init__(self, level):
+        self.level = level
+    def writeln(self, text, level = 1):
+        if self.level >= level:
+            print(text)
+log = None
+
 class mxxbuilder(object):
     def __init__(self, args):
         self.args = args
@@ -77,11 +85,11 @@ class mxxbuilder(object):
         if not path.exists(src_file): return
         if not self.is_file_new(src_file): return
 
-        print("compilation::stdafx")
+        log.writeln("compilation::stdafx")
         start_time = time.time()
         targeto = self.get_target_o_path(src_file)
         subprocess.check_call(['g++'] + options + ['-c', src_file, '-o', targeto])
-        print("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
+        log.writeln("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
 
     def __compile_async(self, newsources, options):
         from threading import Thread
@@ -93,7 +101,7 @@ class mxxbuilder(object):
         def compile_one(f):
             targeto = self.get_target_o_path(f)
             subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
-            print("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
+            log.writeln("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
             self.curr_running -= 1
   
         def run_thread(f):
@@ -105,7 +113,7 @@ class mxxbuilder(object):
             max_threads = multiprocessing.cpu_count()
         else:
             max_threads = self.args.max_threads
-        print('compilation::using {} cores'.format(max_threads))
+        log.writeln('compilation::using {} cores'.format(max_threads))
 
         for f in newsources:
             while self.curr_running >= max_threads:
@@ -119,14 +127,14 @@ class mxxbuilder(object):
         if self.args.stdafx:
             self.compile_stdafx(options)
 
-        print("compilation::start{}".format('' if len(options) < 1 else ' with options={}'.format(options)))
+        log.writeln("compilation::start{}".format('' if len(options) < 1 else ' with options:\n\t{}'.format('\n\t'.join(options))))
         start_time = time.time()
 
         newsources = self.get_target_files()
-        print("compilation::collected {} files in {:.2f}s".format(len(newsources), time.time() - start_time))
+        log.writeln("compilation::collected {} files in {:.2f}s".format(len(newsources), time.time() - start_time))
 
         self.__compile_async(newsources, options)
-        print("compilation::finish in {:.2f}s".format(time.time() - start_time))
+        log.writeln("compilation::finish in {:.2f}s".format(time.time() - start_time))
     def linkall(self, options = None):
         self.init_build_dir()
 
@@ -141,53 +149,58 @@ class mxxbuilder(object):
         output_exe_path = self.args.out
 
         command = ['g++'] + options + ['-o', output_exe_path] + outputs
-        print("linking::start with \"{}\"".format(' '.join(map(lambda f: self.get_reltoroot_path(f) if path.isabs(f) else f, command))))
+        log.writeln("linking::start with \"{}\"".format(' '.join(map(lambda f: self.get_reltoroot_path(f) if path.isabs(f) else f, command))))
         start_time = time.time()
         
         subprocess.check_call(command)
 
-        print("linking::end in {:.2f}s with output in {}".format(time.time() - start_time, output_exe_path))
+        log.writeln("linking::end in {:.2f}s with output in {}".format(time.time() - start_time, output_exe_path))
     def runexe(self):
+        log.writeln('Running {}\n'.format(mxx.get_output_exe_path()))
         subprocess.call(self.args.out)
 
 def parse_args():
     parser = argparse.ArgumentParser(prefix_chars='+')
 
-    parser.add_argument('targetpath')
-    parser.add_argument('++out', help='output file', nargs='?', const=None)
-    parser.add_argument('++build', help='build directory. contains all the .o files', nargs='?')
+    parser.add_argument('targetpath', help='directory with all source files')
+    parser.add_argument('++build', nargs='?', help='build directory. contains all the .o files')
     parser.set_defaults(build='build')
+    parser.add_argument('++out', help='output file', nargs='?', const=None, help='output .exe path. can be relative to ++build directory or absolute')
 
-    parser.add_argument('++compile', dest='compile', action='store_true')
-    parser.add_argument('++no-compile', dest='compile', action='store_false')
+    parser.add_argument('++compile', dest='compile', action='store_true', help='do compilation')
+    parser.add_argument('++no-compile', dest='compile', action='store_false', help='dont compile .cpp\'s')
     parser.set_defaults(compile=True)
-    parser.add_argument('++link', dest='link', action='store_true')
-    parser.add_argument('++no-link', dest='link', action='store_false')
+    parser.add_argument('++link', dest='link', action='store_true', help='link .o files')
+    parser.add_argument('++no-link', dest='link', action='store_false', help='dont link .o files')
     parser.set_defaults(link=True)
-    parser.add_argument('++stdafx', dest='stdafx', action='store_true')
-    parser.add_argument('++no-stdafx', dest='stdafx', action='store_false')
+    parser.add_argument('++stdafx', dest='stdafx', action='store_true', help='compile stdafx.h')
+    parser.add_argument('++no-stdafx', dest='stdafx', action='store_false', help='do not compile stdafx.h')
     parser.set_defaults(stdafx=True)
 
-    parser.add_argument('++clean', dest='clean', action='store_true')
+
+    parser.add_argument('++clean', dest='clean', action='store_true', help='remove ++build directory')
     parser.set_defaults(clean=False)
 
-    parser.add_argument('++autorun', dest='autorun', action='store_true')
+    parser.add_argument('++autorun', dest='autorun', action='store_true', help='run .exe after linking, or just run if exists')
     parser.set_defaults(autorun=False)
 
-    parser.add_argument('++max-threads', dest='max_threads', nargs='?', type=int)
+    parser.add_argument('++max-threads', dest='max_threads', nargs='?', type=int, help="maximum available threads during compilation")
     parser.set_defaults(max_threads=-1)
+    parser.add_argument('++verbose', dest='verbose', nargs='?', type=int, help='verbosity level. expected int from 0 to 10')
+    parser.set_defaults(verbose=1)
  
-    parser.add_argument('++copts', help='compiler options', nargs='+')
+    parser.add_argument('++copts', nargs='+', help='compiler options')
     parser.set_defaults(copts=[])
-    parser.add_argument('++lopts', help='linker options', nargs='+')
+    parser.add_argument('++lopts', nargs='+', help='linker options')
     parser.set_defaults(lopts=[])
-    parser.add_argument('++exclude', help='ignore these file names relative to root of search dir (/src or /build)', nargs='+')
+    parser.add_argument('++exclude', nargs='+', help='ignore these file names relative to root of search dir (/src or /build)')
     parser.set_defaults(exclude=[])
 
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_args()
+    log = Log(args.verbose)
     mxx = mxxbuilder(args)
 
     if args.clean:
@@ -202,7 +215,6 @@ if __name__ == '__main__':
         mxx.linkall(args.lopts)
 
     if args.autorun:
-        print('Running {}\n'.format(mxx.get_output_exe_path()))
         mxx.runexe()
     else:
-        print("mxxbuild::end\n")
+        log.writeln("mxxbuild::end\n")

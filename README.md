@@ -8,6 +8,7 @@ Tool for c++ projects build automatization
                 [++clean] [++autorun]  
                 [++copts COPTS [COPTS ...]] [++lopts LOPTS [LOPTS ...]]
                 [++exclude EXCLUDE [EXCLUDE ...]] 
+                [++max-threads [MAX_THREADS]] [++verbose [VERBOSE]] 
 
 Where  
 `targetpath` is source files directory OR just one file. Usually `/src`.  
