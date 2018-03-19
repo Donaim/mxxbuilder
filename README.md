@@ -1,26 +1,13 @@
 Tool for c++ projects build automatization  
 
-# Usage
-    mxxbuild.py targetpath 
-                [++build [BUILD]] [++out [OUT]] 
-                [++compile] [++no-compile] [++link] [++no-link] 
-                [++stdafx] [++no-stdafx]  
-                [++clean] [++autorun]  
-                [++copts COPTS [COPTS ...]] [++lopts LOPTS [LOPTS ...]]
-                [++exclude EXCLUDE [EXCLUDE ...]] 
-                [++max-threads [MAX_THREADS]] [++verbose [VERBOSE]] 
+# Example usage
+`$ cd project-root`  
+`$ mxxbuild.py /src`  
+mxx will perform both compilation and linking. All build files are gonna be in `/project-root/build` and output file will be called `a.exe` 
 
-Where  
-`targetpath` is source files directory OR just one file. Usually `/src`.  
-`++copts`, `++lopts` are compiler- and respectively linker- options.  
-`++exclude` will ignore chosen files during linking/compilation. Useful for tests or solution with multiple `main()` entries.  
-`++build` specifies `/build` directory. Default is `targetpath/../build/`  
-`++out` specifies `-o` for linker. Default is `/build/a.exe`  
-`++clean` does usual clean up in `/build` directory.  
-`++autorun` runs `OUT` after linking, or if `++no-link` just runs if it exists.  
-`++compile`, `++no-compile`, `++link` and `++no-link` are self-descriptive. Default values are true.  
-
-You need to use `++` instead of `--` because argparse treats `-` as its own option, therefore it's problematic to pass `copts`, `lopts` to g++.
+`$ cd project-root`  
+`$ mxxbuild.py /src ++clean ++autorun ++verbose 0 ++max-threads 16 ++out ~/o.exe ++build ~/tmp/project-root ++copts -Iinclude/`
+Clean ~/tmp/project-root directory, set verbosity level to 0, use 16 threads and headers in `/project-root/include` to compile source files from `/project-root/src`, link them with output in `~/o.exe` and run final executable.  
 
 # Internal procedure
 - recieve `/targetpath` path

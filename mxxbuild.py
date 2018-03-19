@@ -161,11 +161,12 @@ class mxxbuilder(object):
 
 def parse_args():
     parser = argparse.ArgumentParser(prefix_chars='+')
+    parser.epilog = '''You need to use "++" instead of "--" because argparse treats '-' as its own option, therefore it's problematic to pass <copts>, <lopts> to g++'''
 
     parser.add_argument('targetpath', help='directory with all source files')
     parser.add_argument('++build', nargs='?', help='build directory. contains all the .o files')
     parser.set_defaults(build='build')
-    parser.add_argument('++out', help='output file', nargs='?', const=None, help='output .exe path. can be relative to ++build directory or absolute')
+    parser.add_argument('++out', nargs='?', const=None, help='output .exe path. can be relative to ++build directory or absolute')
 
     parser.add_argument('++compile', dest='compile', action='store_true', help='do compilation')
     parser.add_argument('++no-compile', dest='compile', action='store_false', help='dont compile .cpp\'s')
