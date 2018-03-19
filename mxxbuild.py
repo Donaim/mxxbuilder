@@ -84,20 +84,35 @@ class mxxbuilder(object):
         print("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
 
     def __compile_async(self, newsources, options):
+        from threading import Thread
+        import multiprocessing 
+   
         ns_len = len(newsources)
+        self.curr_running = 0
+
         def compile_one(f):
             targeto = self.get_target_o_path(f)
             subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
             print("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
+            self.curr_running -= 1
   
-        from threading import Thread
-        th_list = []
-        for f in newsources:
+        def run_thread(f):
             thread = Thread(target = compile_one, args = (f, ))
             thread.start()
-            th_list.append(thread)
-        for t in th_list.copy():
-            t.join()
+            self.curr_running += 1
+
+        if self.args.max_threads < 1:
+            max_threads = multiprocessing.cpu_count()
+        else:
+            max_threads = self.args.max_threads
+        print('compilation::using {} cores'.format(max_threads))
+
+        for f in newsources:
+            while self.curr_running >= max_threads:
+                time.sleep(0.01)
+            run_thread(f)
+        while self.curr_running > 0:
+            time.sleep(0.01)
     def compile(self, options):
         self.init_build_dir()
 
@@ -159,6 +174,8 @@ def parse_args():
     parser.add_argument('++autorun', dest='autorun', action='store_true')
     parser.set_defaults(autorun=False)
 
+    parser.add_argument('++max-threads', dest='max_threads', nargs='?', type=int)
+    parser.set_defaults(max_threads=-1)
  
     parser.add_argument('++copts', help='compiler options', nargs='+')
     parser.set_defaults(copts=[])

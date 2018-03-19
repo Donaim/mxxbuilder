@@ -37,4 +37,4 @@ Exception is "stdafx.h" which is being checked for updates.
 - [X] Option parsing
 - [X] Auto-run option
 - [X] Send-forward options for linker and compiler
-- [ ] max-threads option for compilation
+- [X] max-threads option for compilation
