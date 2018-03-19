@@ -22,13 +22,15 @@ class mxxbuilder(object):
             self.targetdir = path.dirname(self.targetpath)
 
         self.rootdir = path.normpath(path.join(self.targetdir, '..')) # one up
-        self.builddir = path.join(self.rootdir, 'build')
 
-        if not self.args.out is None:
-            if not path.isabs(self.args.out):
-                self.args.out = path.join(self.rootdir, self.args.out)
-            if self.args.out[-1] == path.sep:
-                self.builddir = path.join(self.rootdir, self.args.out)
+        if not path.isabs(self.args.build):
+            self.args.build = path.join(self.rootdir, self.args.build)
+        self.builddir = self.args.build
+
+        if self.args.out is None:
+            self.args.out = path.join(self.builddir, 'a.exe')
+        elif not path.isabs(self.args.out):
+            self.args.out = path.join(self.rootdir, self.args.out)
 
     def init_build_dir(self):
         if not path.exists(self.builddir): os.makedirs(self.builddir)
@@ -49,11 +51,6 @@ class mxxbuilder(object):
             if not path.exists(targetdir): os.makedirs(targetdir)
             
             return targetpath
-    def get_output_exe_path(self):
-        if self.args.out is None or path.isdir(self.args.out):
-            return path.join(self.builddir, "a.exe")
-        else:
-            return self.args.out
     def is_file_new(self, src_file):
         '''
         if .cpp file needs to be recompiled -> True \n
@@ -99,7 +96,7 @@ class mxxbuilder(object):
             thread = Thread(target = compile_one, args = (f, ))
             thread.start()
             th_list.append(thread)
-        for t in th_list:
+        for t in th_list.copy():
             t.join()
     def compile(self, options):
         self.init_build_dir()
@@ -126,7 +123,7 @@ class mxxbuilder(object):
         outputs = filter(lambda f: not path.relpath(f, self.builddir) in self.exclude, outputs) # filter excluded
         outputs = sorted(outputs, key=linker_sort)
         outputs = list(outputs)
-        output_exe_path = self.get_output_exe_path()
+        output_exe_path = self.args.out
 
         command = ['g++'] + options + ['-o', output_exe_path] + outputs
         print("linking::start with \"{}\"".format(' '.join(map(lambda f: self.get_reltoroot_path(f) if path.isabs(f) else f, command))))
@@ -136,13 +133,15 @@ class mxxbuilder(object):
 
         print("linking::end in {:.2f}s with output in {}".format(time.time() - start_time, output_exe_path))
     def runexe(self):
-        subprocess.call(self.get_output_exe_path())
+        subprocess.call(self.args.out)
 
 def parse_args():
     parser = argparse.ArgumentParser(prefix_chars='+')
 
     parser.add_argument('targetpath')
     parser.add_argument('++out', help='output file', nargs='?', const=None)
+    parser.add_argument('++build', help='build directory. contains all the .o files', nargs='?')
+    parser.set_defaults(build='build')
 
     parser.add_argument('++compile', dest='compile', action='store_true')
     parser.add_argument('++no-compile', dest='compile', action='store_false')
