@@ -6,8 +6,10 @@ Tool for c++ projects build automatization
 mxx will perform both compilation and linking. All build files are gonna be in `/project-root/build` and output file will be called `a.exe` 
 
 `$ cd project-root`  
-`$ mxxbuild.py /src ++clean ++autorun ++verbose 0 ++max-threads 16 ++out ~/o.exe ++build ~/tmp/project-root ++copts -Iinclude/`
+`$ mxxbuild.py /src ++clean ++autorun ++verbose 0 ++max-threads 16 ++out ~/o.exe ++build ~/tmp/project-root ++copts -Iinclude/`  
 Clean ~/tmp/project-root directory, set verbosity level to 0, use 16 threads and headers in `/project-root/include` to compile source files from `/project-root/src`, link them with output in `~/o.exe` and run final executable.  
+
+To see all options run `mxxbuild.py +h`   
 
 # Internal procedure
 - recieve `/targetpath` path
