@@ -1,4 +1,4 @@
-My simple builder for c++
+Tool for c++ projects build automatization  
 
 # Usage
     mxxbuild.py targetpath 
@@ -12,7 +12,7 @@ My simple builder for c++
 Where  
 `targetpath` is source files directory OR just one file. Usually `/src`.  
 `++copts`, `++lopts` are compiler- and respectively linker- options.  
-`++exclude` will ignore chosen files during linking/compilation. Useful for tests or solution with multiple `main` entries.  
+`++exclude` will ignore chosen files during linking/compilation. Useful for tests or solution with multiple `main()` entries.  
 `++build` specifies `/build` directory. Default is `targetpath/../build/`  
 `++out` specifies `-o` for linker. Default is `/build/a.exe`  
 `++clean` does usual clean up in `/build` directory.  
@@ -31,6 +31,14 @@ You need to use `++` instead of `--` because argparse treats `-` as its own opti
 
 Note that mxxbuild does not track for changes in .h files. You have to recompile it youself whether such change has happend.  
 Exception is "stdafx.h" which is being checked for updates.  
+
+# Features
+- compilation of changed files only
+- async compilation
+- support of "stdafx.h" precompiled header
+- cross platform
+- no install, just download and run
+- no external dependencies, only g++ itself
 
 # To do
 - [X] Timings and other statistics
