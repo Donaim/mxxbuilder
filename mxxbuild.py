@@ -81,23 +81,35 @@ class mxxbuilder(object):
         subprocess.check_call(['g++'] + options + ['-c', src_file, '-o', targeto])
         print("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
 
+    def __compile_async(self, newsources, options):
+        ns_len = len(newsources)
+        def compile_one(f):
+            targeto = self.get_target_o_path(f)
+            subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
+            print("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
+  
+        from threading import Thread
+        th_list = []
+        for f in newsources:
+            thread = Thread(target = compile_one, args = (f, ))
+            thread.start()
+            th_list.append(thread)
+        for t in th_list:
+            t.join()
     def compile(self, options):
         self.init_build_dir()
 
         if self.args.stdafx:
             self.compile_stdafx(options)
 
-        newsources = self.get_target_files()
-
         print("compilation::start{}".format('' if len(options) < 1 else ' with options={}'.format(options)))
         start_time = time.time()
 
-        for f in newsources:
-            targeto = self.get_target_o_path(f)
-            print("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
-            subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
+        newsources = self.get_target_files()
+        print("compilation::collected {} files in {:.2f}s".format(len(newsources), time.time() - start_time))
 
-        print("compilation::finish in {:.2f}s with {} files".format(time.time() - start_time, len(newsources)))
+        self.__compile_async(newsources, options)
+        print("compilation::finish in {:.2f}s".format(time.time() - start_time))
     def linkall(self, options = None):
         self.init_build_dir()
 
