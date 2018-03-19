@@ -11,7 +11,6 @@ import cppcollector
 class mxxbuilder(object):
     def __init__(self, args):
         self.args = args
-        self.out = args.out
 
         self.exclude = list( map(lambda f: path.normpath(f), args.exclude) )
 
@@ -24,6 +23,12 @@ class mxxbuilder(object):
 
         self.rootdir = path.normpath(path.join(self.targetdir, '..')) # one up
         self.builddir = path.join(self.rootdir, 'build')
+
+        if not self.args.out is None:
+            if not path.isabs(self.args.out):
+                self.args.out = path.join(self.rootdir, self.args.out)
+            if self.args.out[-1] == path.sep:
+                self.builddir = path.join(self.rootdir, self.args.out)
 
     def init_build_dir(self):
         if not path.exists(self.builddir): os.makedirs(self.builddir)
@@ -45,10 +50,10 @@ class mxxbuilder(object):
             
             return targetpath
     def get_output_exe_path(self):
-        if self.out is None: 
+        if self.args.out is None or path.isdir(self.args.out):
             return path.join(self.builddir, "a.exe")
         else:
-            return self.out
+            return self.args.out
     def is_file_new(self, src_file):
         '''
         if .cpp file needs to be recompiled -> True \n

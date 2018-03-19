@@ -12,7 +12,7 @@ Where
 `targetpath` is source files directory OR just one file. Usually `/src`.  
 `++copts`, `++lopts` are compiler- and respectively linker- options.  
 `++exclude` will ignore chosen files during linking/compilation. Useful for tests or solution with multiple `main` entries.  
-`++out` specifies `-o` (output file) option.  
+`++out` specifies `-o` for linker, or if ends with '/' on linux and '\' on windows: directory with '.o' files.  
 `++clean` does usual clean up in `/build` directory.  
 `++autorun` runs `OUT` after linking, or just runs if it exists.  
 `++compile`, `++no-compile`, `++link` and `++no-link` are self-descriptive. Default values are true.  
