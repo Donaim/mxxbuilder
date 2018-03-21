@@ -1,4 +1,5 @@
 
+import sys
 import os
 path = os.path
 
@@ -14,6 +15,15 @@ class Log(object):
     def writeln(self, text, level = 1):
         if self.level >= level:
             print(text)
+    def error(self, text):
+        if self.level >= 0:
+            print(text, file=sys.stderr)
+    def throw(self, mess):
+        if self.level >= 0:
+            raise Exception(mess)
+        else:
+            os._exit(2)
+            
 log = None
 
 class mxxbuilder(object):
@@ -23,7 +33,7 @@ class mxxbuilder(object):
         self.exclude = list( map(lambda f: path.normpath(f), args.exclude) )
 
         self.targetpath = path.abspath(path.normpath(args.targetpath))
-        if not path.exists(self.targetpath): raise Exception("targetpath \"{}\" does not exist!".format(self.targetpath))
+        if not path.exists(self.targetpath): log.throw("targetpath \"{}\" does not exist!".format(self.targetpath))
         if path.isdir(self.targetpath):
             self.targetdir = self.targetpath
         else:
@@ -97,14 +107,26 @@ class mxxbuilder(object):
    
         ns_len = len(newsources)
         self.curr_running = 0
+        self.error_during_compile = False
 
         def compile_one(f):
             targeto = self.get_target_o_path(f)
-            subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
-            log.writeln("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
-            self.curr_running -= 1
+            try: 
+                subprocess.check_call(['g++'] + options + ['-c', f, '-o', targeto])
+                log.writeln("\t{} -> {}".format(self.get_reltoroot_path(f), self.get_reltoroot_path(targeto)))
+                self.curr_running -= 1
+            except:
+                self.error_during_compile = True
+                self.curr_running = -1
   
         def run_thread(f):
+            if self.error_during_compile:
+                if __name__ == '__main__':
+                    log.error("compilation::failed")
+                    os._exit(1)
+                else:
+                    log.throw("compilation::failed")
+
             thread = Thread(target = compile_one, args = (f, ))
             thread.start()
             self.curr_running += 1
@@ -187,7 +209,7 @@ def parse_args():
 
     parser.add_argument('++max-threads', dest='max_threads', nargs='?', type=int, help="maximum available threads during compilation")
     parser.set_defaults(max_threads=-1)
-    parser.add_argument('++verbose', dest='verbose', nargs='?', type=int, help='verbosity level. expected int from 0 to 10')
+    parser.add_argument('++verbose', dest='verbose', nargs='?', type=int, help='verbosity level. Default is 1, if less than 0, erros will also be ignored')
     parser.set_defaults(verbose=1)
  
     parser.add_argument('++copts', nargs='+', help='compiler options')
