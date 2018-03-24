@@ -1,4 +1,6 @@
 
+#include "some.stdafx.h"
+
 #include <iostream>
 #include <string>
 

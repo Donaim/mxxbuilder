@@ -97,16 +97,17 @@ class mxxbuilder(object):
                 for f in content: yield f
             else:
                 yield o
+    def find_stdafxes(self, dirpath):
+        return cppcollector.get_endswith(self.targetdir, ['stdafx.h'])
     def compile_stdafx(self):
-        src_file = path.join(self.targetdir, 'stdafx.h')
-        if not path.exists(src_file): return
-        if not self.is_file_new(src_file): return
+        for file in self.find_stdafxes(self.targetdir):
+            if not self.is_file_new(file): continue
 
-        self.log.writeln("compilation::stdafx")
-        start_time = time.time()
-        targeto = self.get_target_o_path(src_file)
-        subprocess.check_call(['g++'] + self.args.copts + ['-c', src_file, '-o', targeto])
-        self.log.writeln("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
+            self.log.writeln("compilation::stdafx {}".format(file))
+            start_time = time.time()
+            targeto = self.get_target_o_path(file)
+            subprocess.check_call(['g++'] + self.args.copts + ['-c', file, '-o', targeto])
+            self.log.writeln("compilation::stdafx::finish in {:.2f}s with output size = {:.2f} Mb".format(time.time() - start_time, path.getsize(targeto) / 1024.0 / 1024.0))
 
     def __compile_async(self, newsources):
         from threading import Thread

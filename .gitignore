@@ -1,5 +1,6 @@
 *.exe
 *.o
 *.out
+*.gch
 
 **__pycache__**
