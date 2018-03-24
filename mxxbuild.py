@@ -65,7 +65,7 @@ class mxxbuilder(object):
         if curr_ext == 'h':
             return src_file + '.gch'
         else:
-            relpath     = path.relpath(src_file, self.targetdir)
+            relpath     = path.relpath(src_file, self.rootdir)
             targetpath  = path.join(self.builddir, relpath)
         
             new_ext     = 'o'
