@@ -104,14 +104,7 @@ def get_new_cpps(dirpath, rootdir, builddir, exclude=[]):
     return outputs
 
 def get_link_chosen_command(outputs: list, output_exe_path: str):
-    def linker_sort(val):
-        if path.basename(val).startswith("main"): return 0
-        else: return 1
-
-    outputs = sorted(outputs, key=linker_sort)
-    outputs = list(outputs)
-
-    return ['g++', '-o', output_exe_path] + outputs
+    return ['g++', '-o', output_exe_path] + list(outputs)
 def get_link_some_command(sources: list, output_exe_path: str, exclude = []):
     outputs = __unpack_dirs(sources, exclude, cppcollector.o_exts)
     return get_link_chosen_command(outputs, output_exe_path)
