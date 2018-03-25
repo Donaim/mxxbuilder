@@ -5,8 +5,6 @@ import time
 
 import cppcollector
 
-def get_reltoroot_path(rootdir, src_file):
-    return path.relpath(src_file, rootdir)
 def get_target_o_path(rootdir, builddir, src_file):
     curr_ext    = src_file.split(path.extsep)[-1]
     if curr_ext == 'h':
@@ -77,7 +75,7 @@ class AsyncCompiler(object):
         targeto = get_target_o_path(self.rootdir, self.builddir, f)
         try: 
             subprocess.check_call(['g++'] + self.copts + ['-c', f, '-o', targeto])
-            self.log.writeln("\t{} -> {}".format(get_reltoroot_path(self.rootdir, f), get_reltoroot_path(self.rootdir, targeto)))
+            self.log.writeln("\t{} -> {}".format(path.relpath(f, self.rootdir), path.relpath(targeto, self.rootdir)))
             self.curr_running -= 1
         except:
             raise
@@ -114,12 +112,6 @@ def get_link_chosen_command(outputs: list, output_exe_path: str):
     outputs = list(outputs)
 
     return ['g++', '-o', output_exe_path] + outputs
-    # self.log.writeln("linking::start with \"{}\"".format(' '.join(map(lambda f: get_reltoroot_path(f) if path.isabs(f) else f, command))))
-    # start_time = time.time()
-    
-    # subprocess.check_call(command)
-
-    # self.log.writeln("linking::end in {:.2f}s with output in {}".format(time.time() - start_time, output_exe_path))
 def get_link_some_command(sources: list, output_exe_path: str, exclude = []):
     outputs = __unpack_dirs(sources, exclude, cppcollector.o_exts)
     return get_link_chosen_command(outputs, output_exe_path)
@@ -128,7 +120,7 @@ def linkall(dirpath: str, output_exe_path: str, lopts: list, log, exclude = []):
     command = command + lopts
 
     start_time = time.time()
-    log.writeln("linking::start with \"{}\"".format(' '.join(map(lambda f: get_reltoroot_path(dirpath, f) if path.isabs(f) else f, command))))
+    log.writeln("linking::start with \"{}\"".format(' '.join(map(lambda f: path.relpath(f, dirpath) if path.isabs(f) else f, command))))
     subprocess.check_call(command)
     log.writeln("linking::end in {:.2f}s with output in {}".format(time.time() - start_time, output_exe_path))
     
