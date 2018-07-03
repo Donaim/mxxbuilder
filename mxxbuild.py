@@ -31,6 +31,15 @@ class mxxbuilder(object):
         self.log = Log(args.verbose)
 
         self.args.exclude = list( map(lambda f: path.normpath(f), args.exclude) )
+        if self.args.allow_all:
+            self.compile_exts = None
+        else:
+            if self.args.cname == 'g++':
+                self.compile_exts = cppcollector.cpp_exts
+            elif self.args.cname == 'gcc':
+                self.compile_exts = cppcollector.c_exts
+            else:
+                self.compile_exts = None
 
         self.targetpath = path.abspath(path.normpath(args.targetpath))
         if not path.exists(self.targetpath): self.log.throw("targetpath \"{}\" does not exist!".format(self.targetpath))
@@ -66,7 +75,7 @@ class mxxbuilder(object):
         
         all_precompiled = bm.find_stdafxes(self.targetdir)
         new_precompiled = filter(lambda f: bm.is_file_new(self.rootdir, self.targetdir, f), all_precompiled) 
-        bm.compile_some(new_precompiled, self.rootdir, self.builddir, self.args.copts, self.args.max_threads, self.log)
+        bm.compile_async(new_precompiled, rootdir=self.rootdir, builddir=self.builddir, copts=self.args.copts, max_threads=self.args.max_threads, log=self.log)
         self.log.writeln("compilation::stdafx::finish in {:.2f}s ".format(time.time() - start_time))
 
     def compile(self):
@@ -77,7 +86,7 @@ class mxxbuilder(object):
         start_time = time.time()
         self.init_build_dir()
 
-        new = list(bm.get_new_cpps(self.targetdir, self.rootdir, self.builddir, self.args.exclude))
+        new = list(bm.get_new_sources([self.targetdir], rootdir=self.rootdir, builddir=self.builddir, exclude=self.args.exclude, allowed_exts=self.compile_exts))
         self.log.writeln("compilation::collected {} files in {:.2f}s".format(len(new), time.time() - start_time))
 
         bm.compile_async(new, self.rootdir, self.builddir, self.args.copts, self.args.max_threads, self.log)
@@ -114,6 +123,9 @@ def parse_args(argv: list):
 
     parser.add_argument('++autorun', dest='autorun', action='store_true', help='run .exe after linking, or just run if exists')
     parser.set_defaults(autorun=False)
+
+    parser.add_argument('++allow-all', dest='allow_all', action='store_true', help='all extensions can be compiled (not only .c .cpp and such)')
+    parser.set_defaults(allow_all=False)
 
     parser.add_argument('++max-threads', dest='max_threads', nargs='?', type=int, help="maximum available threads during compilation")
     parser.set_defaults(max_threads=-1)

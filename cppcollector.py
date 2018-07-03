@@ -3,6 +3,7 @@ import os, sys
 from os import path
 
 cpp_exts = ['cpp', 'cxx', 'c', 'cc', 'c++']
+c_exts   = ['c']
 h_exts = ['h', 'hh', 'tcc', 'txx'] # +templates
 o_exts = ['o']
 
@@ -15,6 +16,7 @@ def get_endswith(dirpath, endings):
     return get_filtered(dirpath, filt)
 
 def extension_rule(f, allowed_exts):
+    if allowed_exts is None: return True
     ext = f.split(path.extsep)[-1]
     return ext in allowed_exts
 def get_files(dirpath, allowed_exts):

@@ -45,6 +45,7 @@ def __unpack_dirs_ruled(sources: list, rule):
         else:
             if rule(o): yield o
 def __unpack_dirs(sources: list, exclude: list, allowed_exts: list):
+    if exclude is None: exclude = []
     def rule(f): return cppcollector.extension_rule(f, allowed_exts) and (not f in exclude)
     return __unpack_dirs_ruled(sources, rule)
 def find_stdafxes(dirpath):
@@ -98,11 +99,11 @@ class AsyncCompiler(object):
         self.curr_running += 1
 def compile_async(newsources: list, rootdir: str, builddir: str, copts: list, max_threads: int, log):
     AsyncCompiler(newsources, rootdir, builddir, copts, max_threads, log)
-def compile_some(sources: list, rootdir: str, builddir: str, copts: list, max_threads: int, log):
-    outputs = __unpack_dirs(sources, exclude=[], allowed_exts=cppcollector.cpp_exts)
+def compile_some(sources: list, rootdir: str, builddir: str, allowed_exts: list, exclude: list, copts: list, max_threads: int, log):
+    outputs = __unpack_dirs(sources, exclude=exclude, allowed_exts=allowed_exts)
     compile_async(outputs, rootdir, builddir, copts, max_threads, log)
-def get_new_cpps(dirpath, rootdir, builddir, exclude=[]):
-    outputs = __unpack_dirs([dirpath], exclude, cppcollector.cpp_exts)
+def get_new_sources(sources: list, rootdir, builddir, exclude, allowed_exts):
+    outputs = __unpack_dirs(sources, exclude=exclude, allowed_exts=allowed_exts)
     outputs = filter(lambda f: is_file_new(rootdir, builddir, f), outputs)
     return outputs
 
