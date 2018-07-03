@@ -8,7 +8,7 @@ import time
 import argparse
 
 import cppcollector
-from buildmethods import *
+import buildmethods as bm
 
 class Log(object):
     def __init__(self, level):
@@ -64,9 +64,9 @@ class mxxbuilder(object):
         self.log.writeln("compilation::stdafx")
         start_time = time.time()
         
-        all_precompiled = find_stdafxes(self.targetdir)
-        new_precompiled = filter(lambda f: is_file_new(self.rootdir, self.targetdir, f), all_precompiled) 
-        compile_some(new_precompiled, self.rootdir, self.builddir, self.args.copts, self.args.max_threads, self.log)
+        all_precompiled = bm.find_stdafxes(self.targetdir)
+        new_precompiled = filter(lambda f: bm.is_file_new(self.rootdir, self.targetdir, f), all_precompiled) 
+        bm.compile_some(new_precompiled, self.rootdir, self.builddir, self.args.copts, self.args.max_threads, self.log)
         self.log.writeln("compilation::stdafx::finish in {:.2f}s ".format(time.time() - start_time))
 
     def compile(self):
@@ -77,14 +77,14 @@ class mxxbuilder(object):
         start_time = time.time()
         self.init_build_dir()
 
-        new = list(get_new_cpps(self.targetdir, self.rootdir, self.builddir, self.args.exclude))
+        new = list(bm.get_new_cpps(self.targetdir, self.rootdir, self.builddir, self.args.exclude))
         self.log.writeln("compilation::collected {} files in {:.2f}s".format(len(new), time.time() - start_time))
 
-        compile_async(new, self.rootdir, self.builddir, self.args.copts, self.args.max_threads, self.log)
+        bm.compile_async(new, self.rootdir, self.builddir, self.args.copts, self.args.max_threads, self.log)
         
         self.log.writeln("compilation::finish in {:.2f}s".format(time.time() - start_time))
     def link(self):
-        linkall(self.builddir, self.args.out, self.args.lopts, self.log, self.args.exclude)
+        bm.linkall(self.builddir, self.args.out, self.args.lopts, self.log, self.args.exclude)
     def runexe(self):
         self.log.writeln('mxx::running {}\n'.format(self.args.out))
         subprocess.call(self.args.out)
@@ -119,6 +119,8 @@ def parse_args(argv: list):
     parser.set_defaults(max_threads=-1)
     parser.add_argument('++verbose', dest='verbose', nargs='?', type=int, help='verbosity level. Default is 1, if less than 0, erros will also be ignored')
     parser.set_defaults(verbose=1)
+    parser.add_argument('++cname', dest='cname', nargs='?', type=str, help='compiler name. Default is "g++"')
+    parser.set_defaults(cname='g++')
  
     parser.add_argument('++copts', nargs='+', help='compiler options')
     parser.set_defaults(copts=[])
@@ -132,6 +134,7 @@ def parse_args(argv: list):
 def main(argv):
     args = parse_args(argv)
     mxx = mxxbuilder(args)
+    bm.compiler_name = args.cname
 
     if args.compile:
         mxx.compile()

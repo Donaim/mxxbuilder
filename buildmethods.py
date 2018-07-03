@@ -5,6 +5,8 @@ import time
 
 import cppcollector
 
+compiler_name = 'g++'
+
 def get_target_o_path(rootdir, builddir, src_file):
     curr_ext    = src_file.split(path.extsep)[-1]
     if curr_ext == 'h':
@@ -74,7 +76,7 @@ class AsyncCompiler(object):
     def compile_one(self, f):
         targeto = get_target_o_path(self.rootdir, self.builddir, f)
         try: 
-            subprocess.check_call(['g++'] + self.copts + ['-c', f, '-o', targeto])
+            subprocess.check_call([compiler_name] + self.copts + ['-c', f, '-o', targeto])
             self.log.writeln("\t{} -> {}".format(path.relpath(f, self.rootdir), path.relpath(targeto, self.rootdir)))
             self.curr_running -= 1
         except:
@@ -104,7 +106,7 @@ def get_new_cpps(dirpath, rootdir, builddir, exclude=[]):
     return outputs
 
 def get_link_chosen_command(outputs: list, output_exe_path: str):
-    return ['g++', '-o', output_exe_path] + list(outputs)
+    return [compiler_name, '-o', output_exe_path] + list(outputs)
 def get_link_some_command(sources: list, output_exe_path: str, exclude = []):
     outputs = __unpack_dirs(sources, exclude, cppcollector.o_exts)
     return get_link_chosen_command(outputs, output_exe_path)
