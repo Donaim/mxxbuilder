@@ -63,7 +63,7 @@ class AsyncCompiler(object):
 
         import multiprocessing
 
-        if max_threads < 1:
+        if max_threads is None or max_threads < 1:
             self.max_threads = multiprocessing.cpu_count()
         else:
             self.max_threads = max_threads
