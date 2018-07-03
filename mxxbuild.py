@@ -95,7 +95,7 @@ class mxxbuilder(object):
         self.log.writeln("compilation::finish in {:.2f}s".format(time.time() - start_time))
         return True
     def link(self):
-        return bm.linkall(self.builddir, self.args.out, self.args.lopts, self.log, self.args.exclude)
+        return bm.linksome([self.builddir], self.args.out, self.args.lopts, self.log, self.args.exclude)
     def runexe(self):
         self.log.writeln('mxx::running {}\n'.format(self.args.out))
         subprocess.call(self.args.out)

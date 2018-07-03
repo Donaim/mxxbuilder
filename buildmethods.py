@@ -113,17 +113,21 @@ def get_link_chosen_command(outputs: list, output_exe_path: str):
 def get_link_some_command(sources: list, output_exe_path: str, exclude = []):
     outputs = __unpack_dirs(sources, exclude, cppcollector.o_exts)
     return get_link_chosen_command(outputs, output_exe_path)
-def linkall(dirpath: str, output_exe_path: str, lopts: list, log, exclude = []) -> bool:
-    command = get_link_some_command([dirpath], output_exe_path, exclude=exclude)
+def linksome(sources: list, output_exe_path: str, lopts: list, log, exclude = []) -> bool:
+    command = get_link_some_command(sources, output_exe_path, exclude=exclude)
     command = command + lopts
 
-    start_time = time.time()
-    log.writeln("linking::start with \"{}\"".format(' '.join(map(lambda f: path.relpath(f, dirpath) if path.isabs(f) else f, command))))
+    files = sources
+    if len(sources) == 1 and path.isdir(sources[0]):
+        d = sources[0]
+        files = map(lambda f: path.relpath(f, d) if path.isabs(f) else f, command)
+  
+    log.writeln("linking::start with \"{}\"".format(' '.join(files)))
     try: 
+        start_time = time.time()
         subprocess.check_call(command)
         log.writeln("linking::end in {:.2f}s with output in {}".format(time.time() - start_time, output_exe_path))
         return True
     except: 
         log.error("linking::error")
         return False
-    
