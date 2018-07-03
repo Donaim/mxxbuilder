@@ -89,11 +89,13 @@ class mxxbuilder(object):
         new = list(bm.get_new_sources([self.targetdir], rootdir=self.rootdir, builddir=self.builddir, exclude=self.args.exclude, allowed_exts=self.compile_exts))
         self.log.writeln("compilation::collected {} files in {:.2f}s".format(len(new), time.time() - start_time))
 
-        bm.compile_async(new, self.rootdir, self.builddir, self.args.copts, self.args.max_threads, self.log)
+        if not bm.compile_async(new, self.rootdir, self.builddir, self.args.copts, self.args.max_threads, self.log):
+            return False
         
         self.log.writeln("compilation::finish in {:.2f}s".format(time.time() - start_time))
+        return True
     def link(self):
-        bm.linkall(self.builddir, self.args.out, self.args.lopts, self.log, self.args.exclude)
+        return bm.linkall(self.builddir, self.args.out, self.args.lopts, self.log, self.args.exclude)
     def runexe(self):
         self.log.writeln('mxx::running {}\n'.format(self.args.out))
         subprocess.call(self.args.out)
@@ -149,10 +151,12 @@ def main(argv):
     bm.compiler_name = args.cname
 
     if args.compile:
-        mxx.compile()
+        if not mxx.compile():
+            return mxx.log.writeln('aborting')
     
     if args.link:
-        mxx.link()
+        if not mxx.link():
+            return mxx.log.writeln('aborting')
 
     if args.autorun:
         mxx.runexe()

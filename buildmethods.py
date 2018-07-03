@@ -55,7 +55,7 @@ class AsyncCompiler(object):
     def __init__(self, newsources: list, rootdir: str, builddir: str, copts: list, max_threads: int, log):
         self.curr_running = 0
         self.sources = newsources
-        self.error_during_compile = False
+        self.compilation_ok = True
         self.rootdir = rootdir
         self.builddir = builddir
         self.copts = copts
@@ -75,33 +75,30 @@ class AsyncCompiler(object):
             self.run_thread(f)
         while self.curr_running > 0:
             time.sleep(0.01)
-    def compile_one(self, f):
-        targeto = get_target_o_path(self.rootdir, self.builddir, f)
-        try: 
+
+    def compile_one(self, f, targeto):
+        if not self.compilation_ok:
+            return
+        try:
             subprocess.check_call([compiler_name] + self.copts + ['-c', f, '-o', targeto])
             self.log.writeln("\t{} -> {}".format(path.relpath(f, self.rootdir), path.relpath(targeto, self.rootdir)))
             self.curr_running -= 1
         except:
-            raise
-            self.error_during_compile = True
+            self.compilation_ok = False
             self.curr_running = -1
+            self.log.error("compilation::failed")
 
     def run_thread(self, f):
-        if self.error_during_compile:
-            if __name__ == '__main__':
-                self.log.error("compilation::failed")
-                os._exit(1)
-            else:
-                self.log.throw("compilation::failed")
-
-        thread = AsyncCompiler.Thread(target = self.compile_one, args = (f, ))
-        thread.start()
+        targeto = get_target_o_path(self.rootdir, self.builddir, f)
+        thread = AsyncCompiler.Thread(target = self.compile_one, args = (f, targeto, ))
         self.curr_running += 1
-def compile_async(newsources: list, rootdir: str, builddir: str, copts: list, max_threads: int, log):
-    AsyncCompiler(newsources, rootdir, builddir, copts, max_threads, log)
-def compile_some(sources: list, rootdir: str, builddir: str, allowed_exts: list, exclude: list, copts: list, max_threads: int, log):
+        thread.start()
+def compile_async(newsources: list, rootdir: str, builddir: str, copts: list, max_threads: int, log) -> bool:
+    ac = AsyncCompiler(newsources, rootdir, builddir, copts, max_threads, log)
+    return ac.compilation_ok
+def compile_some(sources: list, rootdir: str, builddir: str, allowed_exts: list, exclude: list, copts: list, max_threads: int, log) -> bool:
     outputs = __unpack_dirs(sources, exclude=exclude, allowed_exts=allowed_exts)
-    compile_async(outputs, rootdir, builddir, copts, max_threads, log)
+    return compile_async(outputs, rootdir, builddir, copts, max_threads, log)
 def get_new_sources(sources: list, rootdir, builddir, exclude, allowed_exts):
     outputs = __unpack_dirs(sources, exclude=exclude, allowed_exts=allowed_exts)
     outputs = filter(lambda f: is_file_new(rootdir, builddir, f), outputs)
@@ -112,12 +109,17 @@ def get_link_chosen_command(outputs: list, output_exe_path: str):
 def get_link_some_command(sources: list, output_exe_path: str, exclude = []):
     outputs = __unpack_dirs(sources, exclude, cppcollector.o_exts)
     return get_link_chosen_command(outputs, output_exe_path)
-def linkall(dirpath: str, output_exe_path: str, lopts: list, log, exclude = []):
+def linkall(dirpath: str, output_exe_path: str, lopts: list, log, exclude = []) -> bool:
     command = get_link_some_command([dirpath], output_exe_path, exclude=exclude)
     command = command + lopts
 
     start_time = time.time()
     log.writeln("linking::start with \"{}\"".format(' '.join(map(lambda f: path.relpath(f, dirpath) if path.isabs(f) else f, command))))
-    subprocess.check_call(command)
-    log.writeln("linking::end in {:.2f}s with output in {}".format(time.time() - start_time, output_exe_path))
+    try: 
+        subprocess.check_call(command)
+        log.writeln("linking::end in {:.2f}s with output in {}".format(time.time() - start_time, output_exe_path))
+        return True
+    except: 
+        log.error("linking::error")
+        return False
     
