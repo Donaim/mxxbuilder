@@ -40,9 +40,10 @@ def __unpack_dirs_ruled(sources: list, rule):
     for o in sources:
         if path.isdir(o):
             content = cppcollector.get_filtered(o, rule)
-            for f in content: yield f
+            for f in __unpack_dirs_ruled(content, rule):
+                yield f
         else:
-            yield o
+            if rule(o): yield o
 def __unpack_dirs(sources: list, exclude: list, allowed_exts: list):
     def rule(f): return cppcollector.extension_rule(f, allowed_exts) and (not f in exclude)
     return __unpack_dirs_ruled(sources, rule)
