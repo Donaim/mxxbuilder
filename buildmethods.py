@@ -78,19 +78,23 @@ class AsyncCompiler(object):
 
     def compile_one(self, f, targeto):
         if not self.compilation_ok:
+            self.curr_running -= 1
             return
         try:
             subprocess.check_call([compiler_name] + self.copts + ['-c', f, '-o', targeto])
             self.log.writeln("\t{} -> {}".format(path.relpath(f, self.rootdir), path.relpath(targeto, self.rootdir)))
-            self.curr_running -= 1
         except:
             self.compilation_ok = False
-            self.curr_running = -1
             self.log.error("compilation::failed")
+        finally:
+            self.curr_running -= 1
 
     def run_thread(self, f):
+        if not self.compilation_ok: return
+
         targeto = get_target_o_path(self.rootdir, self.builddir, f)
         thread = AsyncCompiler.Thread(target = self.compile_one, args = (f, targeto, ))
+        
         self.curr_running += 1
         thread.start()
 def compile_async(newsources: list, rootdir: str, builddir: str, copts: list, max_threads: int, log) -> bool:
