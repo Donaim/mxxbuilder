@@ -39,11 +39,12 @@ def is_file_new(rootdir, builddir, src_file):
 def __unpack_dirs_ruled(sources: list, rule):
     for o in sources:
         if path.isdir(o):
-            content = cppcollector.get_filtered(o, rule)
+            content = cppcollector.get_all(o)
             for f in __unpack_dirs_ruled(content, rule):
                 yield f
         else:
             if rule(o): yield o
+
 def __unpack_dirs(sources: list, exclude: list, allowed_exts: list):
     if exclude is None: exclude = []
     def rule(f): return cppcollector.extension_rule(f, allowed_exts) and (not f in exclude)
@@ -112,17 +113,18 @@ def get_link_chosen_command(outputs: list, output_exe_path: str):
     return [compiler_name, '-o', output_exe_path] + list(outputs)
 def get_link_some_command(sources: list, output_exe_path: str, exclude = []):
     outputs = __unpack_dirs(sources, exclude, cppcollector.o_exts)
+    # print('sources = {}\noutputs ={}'.format(sources, list(outputs)))
     return get_link_chosen_command(outputs, output_exe_path)
-def linksome(sources: list, output_exe_path: str, lopts: list, log, exclude = []) -> bool:
+def linksome(sources: list, output_exe_path: str, lopts: list, log, exclude = [], rootdir: str = None) -> bool:
     command = get_link_some_command(sources, output_exe_path, exclude=exclude)
     command = command + lopts
 
-    files = sources
-    if len(sources) == 1 and path.isdir(sources[0]):
-        d = sources[0]
-        files = map(lambda f: path.relpath(f, d) if path.isabs(f) else f, command)
+    if rootdir is None:
+        pcmd = command
+    else:
+        pcmd = map(lambda f: path.relpath(f, rootdir) if path.isabs(f) else f, command)
   
-    log.writeln("linking::start with \"{}\"".format(' '.join(files)))
+    log.writeln("linking::start with \"{}\"".format(' '.join(pcmd)))
     try: 
         start_time = time.time()
         subprocess.check_call(command)
